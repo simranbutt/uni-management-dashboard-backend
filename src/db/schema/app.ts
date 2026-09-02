@@ -1,0 +1,37 @@
+import { pgTable, integer, varchar, timestamp, } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm/relations';
+
+export const departments = pgTable('departments', {
+    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+    name: varchar('name', { length: 50 }).notNull(),
+    code: varchar('code', { length: 50 }).notNull().unique(),
+    description: varchar('description', { length: 255 }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().$onUpdate(()=> new Date()).notNull(),
+});
+
+export const subjects = pgTable('subjects', {
+    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+    name: varchar('name', { length: 50 }).notNull(),
+    departmentId: integer('department_id').notNull().references(()=> departments.id, {onDelete: 'restrict'}),
+    code: varchar('code', { length: 50 }).notNull().unique(),
+    description: varchar('description', { length: 255 }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().$onUpdate(()=> new Date()).notNull(),
+});
+
+export const departmentRelations= relations(departments, ({ many }) => ({
+    subjects: many(subjects),
+}));
+
+export const subjectRelations= relations(subjects, ({ one, many }) => ({
+    department: one(departments, {
+        fields: [subjects.departmentId],
+        references: [departments.id],
+    }),
+}));
+
+export type Department = typeof departments.$inferSelect;
+export type NewDepartment = typeof departments.$inferInsert;
+export type Subject = typeof subjects.$inferSelect;
+export type NewSubject = typeof subjects.$inferInsert;
